@@ -2,19 +2,15 @@
 let input_date = require("minimist")(process.argv.slice(2));
 
 // 日付、曜日などの生成
-let year = input_date["y"] || new Date().getFullYear();
-let month = input_date["m"] || new Date().getMonth() + 1;
+const year = input_date["y"] || new Date().getFullYear();
+const month = input_date["m"] || new Date().getMonth() + 1;
+const day_of_week_str = ["日", "月", "火", "水", "木", "金", "土"];
 let day_of_week = new Date(year, month - 1, 1).getDay();
 let last_day = new Date(year, month, 0).getDate();
 let output_date = `${year}年 ${month}月`;
 
-// １行目を中央寄せするための定数
-const padding = Math.max(0, (18 - output_date.length) / 2);
-const spaces = " ".repeat(padding);
-const day_of_week_str = ["日", "月", "火", "水", "木", "金", "土"];
-
 // スペースをつけて中央寄せ
-console.log(spaces + output_date + spaces);
+console.log(`     ${output_date}`);
 console.log(day_of_week_str.join(" "));
 
 // ここから出力処理
