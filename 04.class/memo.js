@@ -1,5 +1,4 @@
 
-const { title } = require('process');
 const { argv } = require('yargs');
 process.stdin.resume();
 process.stdin.setEncoding('utf8');
@@ -60,6 +59,18 @@ class Memo {
     });
   }
 
+  createMemo(title, content){
+    return new Promise((resolve, reject) => {
+      this.db.run("INSERT INTO memos VALUES (?, ?)", [title, content], (error) => {
+        if(error) {
+          reject(error);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
+
 
   async activate(argv){
     if(argv.l){
@@ -75,9 +86,9 @@ class Memo {
         message: 'Choose a note you want to see',
         choices: titles
       });
-
-      const memo = prompt.run()
-      console.log(memo)
+      const title = await prompt.run();
+      const chosen_memo = await this.fetchMemo(title);
+      console.log(chosen_memo.content);
     } else {
       let lines = [];
       let reader = require('readline').createInterface({
@@ -87,25 +98,10 @@ class Memo {
       reader.on('line', (input_lines) => {
         lines.push(input_lines);
       });
-      reader.on('close', () => {//
-        console.log(lines)
-        let title = lines[0];
-        let content = lines.join('');
-        
-        db.serialize(() => {
-          
-          db.run("INSERT INTO memos VALUES (?, ?)", [title, content]);
-          db.each("SELECT * FROM memos", (err, memo) => {
-            if (err) {
-              console.log(err)
-            } else {
-              console.log(memo);
-            }
-          });
-
-        });
-
-        db.close();
+      reader.on('close', async() => {//
+        const title = lines[0];
+        const content = lines.join('');
+        await this.createMemo(title, content);
       });
     }
   }
