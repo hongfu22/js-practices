@@ -13,7 +13,7 @@ class Memo {
 
   createTable(){
     return new Promise((resolve, reject) => {
-      this.db.run("CREATE TABLE IF NOT EXISTS memos (title TEXT, content TEXT)"), (error) => {
+      this.db.run("CREATE TABLE IF NOT EXISTS memos (title TEXT PRIMARY KEY UNIQUE, content TEXT)"), (error) => {
         if(error) {
           reject(error);
         } else {
@@ -59,6 +59,18 @@ class Memo {
     });
   }
 
+  deleteMemo(title){
+    return new Promise((resolve, reject) => {
+      this.db.run("DELETE FROM memos WHERE title = ?", [title], (error, memo) => {
+        if(error) {
+          reject(error);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }
+
   createMemo(title, content){
     return new Promise((resolve, reject) => {
       this.db.run("INSERT INTO memos VALUES (?, ?)", [title, content], (error) => {
@@ -89,6 +101,16 @@ class Memo {
       const title = await prompt.run();
       const chosen_memo = await this.fetchMemo(title);
       console.log(chosen_memo.content);
+    } else if(argv.d){
+      const { Select } = require('enquirer');
+      const titles = await this.fetchMemoTitles();
+      const prompt = new Select({
+        name: 'memo',
+        message: 'Choose a note you want to delete',
+        choices: titles
+      });
+      const title = await prompt.run();
+      await this.deleteMemo(title);
     } else {
       let lines = [];
       let reader = require('readline').createInterface({
