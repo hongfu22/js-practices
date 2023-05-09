@@ -1,9 +1,8 @@
 
 const { argv } = require('yargs');
+// const { exec } = require('child_process');
 process.stdin.resume();
 process.stdin.setEncoding('utf8');
-
-
 
 class Memo {
   constructor(){
@@ -61,7 +60,7 @@ class Memo {
 
   deleteMemo(title){
     return new Promise((resolve, reject) => {
-      this.db.run("DELETE FROM memos WHERE title = ?", [title], (error, memo) => {
+      this.db.run("DELETE FROM memos WHERE title = ?", [title], (error) => {
         if(error) {
           reject(error);
         } else {
@@ -78,6 +77,19 @@ class Memo {
           reject(error);
         } else {
           resolve();
+        }
+      });
+    });
+  }
+
+  outputMemo(content){
+    return new Promise((resolve, reject) => {
+      const fs = require('fs');
+      fs.writeFile("temporary.txt", content, (error) => {
+        if(error){
+          reject(error)
+        } else {
+          resolve()
         }
       });
     });
@@ -111,6 +123,18 @@ class Memo {
       });
       const title = await prompt.run();
       await this.deleteMemo(title);
+    } else if(argv.e){
+      const { Select } = require('enquirer');
+      const titles = await this.fetchMemoTitles();
+      const prompt = new Select({
+        name: 'memo',
+        message: 'Choose a note you want to edit',
+        choices: titles
+      });
+      const title = await prompt.run();
+      const chosen_memo = await this.fetchMemo(title);
+      await this.outputMemo(chosen_memo.content);
+      const edited_content = await this.editMemo();
     } else {
       let lines = [];
       let reader = require('readline').createInterface({
