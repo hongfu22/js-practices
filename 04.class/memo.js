@@ -24,6 +24,18 @@ class Memo {
     });
   }
 
+  showAllMemos(){
+    return new Promise((resolve, reject) => {
+      this.db.all("SELECT * FROM memos", (error, memos) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(memos);
+        }
+      });
+    });
+  };
+
   fetchMemoTitles(){
     return new Promise((resolve, reject) => {
       this.db.all("SELECT title FROM memos", (error, memos) => {
@@ -42,15 +54,19 @@ class Memo {
         if(error) {
           reject(error);
         } else {
-          resolve(memo)
+          resolve(memo);
         }
       });
     });
   }
 
+
   async activate(argv){
     if(argv.l){
-      
+      const memos = await this.fetchMemoTitles();
+      memos.forEach(memo => {
+        console.log(memo.title);
+      });
     } else if(argv.r){
       const { Select } = require('enquirer');
       const titles = await this.fetchMemoTitles();
