@@ -1,9 +1,9 @@
 
 const { argv } = require('yargs');
-// const { exec } = require('child_process');
 process.stdin.resume();
 process.stdin.setEncoding('utf8');
-
+const { spawn } = require('child_process');
+const filename = "temporary.txt";
 class Memo {
   constructor(){
     const sqlite3 = require('sqlite3').verbose();
@@ -85,11 +85,39 @@ class Memo {
   outputMemo(content){
     return new Promise((resolve, reject) => {
       const fs = require('fs');
-      fs.writeFile("temporary.txt", content, (error) => {
+      fs.writeFile(filename, content, (error) => {
         if(error){
           reject(error)
         } else {
           resolve()
+        }
+      });
+    });
+  }
+
+  editMemo(){
+    return new Promise((resolve, reject) => {
+      const vim = spawn('vim', [filename], { stdio: 'inherit' });
+      vim.on('exit', (error) => {
+        if(error){
+          reject(error)
+        } else {
+          const fs = require('fs');
+          const edited_file = fs.readFileSync(filename, 'utf-8');
+          const file_rows = edited_file.split('\n').map(line => line);
+          resolve(file_rows);
+        }
+      });
+    });
+  }
+
+  updateMemo(ex_title, title, content){
+    return new Promise((resolve, reject) => {
+      this.db.run("UPDATE memos SET title = ?, content = ? WHERE title = ?", [title, content, ex_title], (error) => {
+        if(error) {
+          reject(error);
+        } else {
+          resolve();
         }
       });
     });
@@ -135,6 +163,7 @@ class Memo {
       const chosen_memo = await this.fetchMemo(title);
       await this.outputMemo(chosen_memo.content);
       const edited_content = await this.editMemo();
+      await this.updateMemo(chosen_memo.title, edited_content[0], edited_content.join('\n'));
     } else {
       let lines = [];
       let reader = require('readline').createInterface({
