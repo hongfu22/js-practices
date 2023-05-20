@@ -1,18 +1,21 @@
 
 const { argv } = require('yargs');
-process.stdin.resume();
-process.stdin.setEncoding('utf8');
 const { spawn } = require('child_process');
+const sqlite3 = require('sqlite3').verbose();
 const filename = "temporary.txt";
+const fs = require('fs');
+const { Select } = require('enquirer');
+// process.stdin.resume();
+// process.stdin.setEncoding('utf8');
 class Memo {
   constructor(){
-    const sqlite3 = require('sqlite3').verbose();
     this.db = new sqlite3.Database('memos.db');
+    this.createTable()
   }
 
   createTable(){
     return new Promise((resolve, reject) => {
-      this.db.run("CREATE TABLE IF NOT EXISTS memos (title TEXT PRIMARY KEY UNIQUE, content TEXT)"), (error) => {
+      this.db.run("CREATE TABLE IF NOT EXISTS memos (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT UNIQUE, content TEXT)"), (error) => {
         if(error) {
           reject(error);
         } else {
@@ -22,41 +25,23 @@ class Memo {
     });
   }
 
-  showAllMemos(){
+
+  fetchMemos(){
     return new Promise((resolve, reject) => {
       this.db.all("SELECT * FROM memos", (error, memos) => {
         if (error) {
           reject(error);
         } else {
-          resolve(memos);
+          const question_memo = memos.map((memo) => ({
+            id: memo.id,
+            title: memo.title,
+            content: memo.content
+          }));
+          resolve(question_memo);
         }
       });
     });
   };
-
-  fetchMemoTitles(){
-    return new Promise((resolve, reject) => {
-      this.db.all("SELECT title FROM memos", (error, memos) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(memos);
-        }
-      });
-    });
-  };
-
-  fetchMemo(title){
-    return new Promise((resolve, reject) => {
-      this.db.get("SELECT * FROM memos WHERE title = ?", [title], (error, memo) => {
-        if(error) {
-          reject(error);
-        } else {
-          resolve(memo);
-        }
-      });
-    });
-  }
 
   deleteMemo(title){
     return new Promise((resolve, reject) => {
@@ -72,7 +57,7 @@ class Memo {
 
   createMemo(title, content){
     return new Promise((resolve, reject) => {
-      this.db.run("INSERT INTO memos VALUES (?, ?)", [title, content], (error) => {
+      this.db.run("INSERT INTO memos (title, content) VALUES (?, ?)", [title, content], (error) => {
         if(error) {
           reject(error);
         } else {
@@ -84,7 +69,6 @@ class Memo {
 
   outputMemo(content){
     return new Promise((resolve, reject) => {
-      const fs = require('fs');
       fs.writeFile(filename, content, (error) => {
         if(error){
           reject(error)
@@ -126,41 +110,38 @@ class Memo {
 
   async activate(argv){
     if(argv.l){
-      const memos = await this.fetchMemoTitles();
+      const memos = await this.fetchMemos();
       memos.forEach(memo => {
         console.log(memo.title);
       });
     } else if(argv.r){
-      const { Select } = require('enquirer');
-      const titles = await this.fetchMemoTitles();
       const prompt = new Select({
         name: 'memo',
         message: 'Choose a note you want to see',
-        choices: titles
+        choices: await this.fetchMemos()
       });
-      const title = await prompt.run();
-      const chosen_memo = await this.fetchMemo(title);
-      console.log(chosen_memo.content);
+      await prompt.run()
+        .then(title => {
+          let choice = prompt.choices.find(ch => ch.title === title);
+          console.log(choice.content);
+        });
     } else if(argv.d){
-      const { Select } = require('enquirer');
-      const titles = await this.fetchMemoTitles();
       const prompt = new Select({
         name: 'memo',
         message: 'Choose a note you want to delete',
-        choices: titles
+        choices: await this.fetchMemos()
       });
       const title = await prompt.run();
       await this.deleteMemo(title);
     } else if(argv.e){
-      const { Select } = require('enquirer');
-      const titles = await this.fetchMemoTitles();
+      const memos = await this.fetchMemos();
       const prompt = new Select({
         name: 'memo',
         message: 'Choose a note you want to edit',
-        choices: titles
+        choices: memos
       });
       const title = await prompt.run();
-      const chosen_memo = await this.fetchMemo(title);
+      const chosen_memo = memos.find(ch => ch.title == title)
       await this.outputMemo(chosen_memo.content);
       const edited_content = await this.editMemo();
       await this.updateMemo(chosen_memo.title, edited_content[0], edited_content.join('\n'));
