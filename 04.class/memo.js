@@ -5,8 +5,7 @@ const sqlite3 = require('sqlite3').verbose();
 const filename = "temporary.txt";
 const fs = require('fs');
 const { Select } = require('enquirer');
-// process.stdin.resume();
-// process.stdin.setEncoding('utf8');
+
 class Memo {
   constructor(){
     this.db = new sqlite3.Database('memos.db');
@@ -32,12 +31,12 @@ class Memo {
         if (error) {
           reject(error);
         } else {
-          const question_memo = memos.map((memo) => ({
+          const fetched_memos = memos.map((memo) => ({
             id: memo.id,
             title: memo.title,
             content: memo.content
           }));
-          resolve(question_memo);
+          resolve(fetched_memos);
         }
       });
     });
@@ -108,7 +107,7 @@ class Memo {
   }
 
 
-  async activate(argv){
+  async activate_memo_app(argv){
     if(argv.l){
       const memos = await this.fetchMemos();
       memos.forEach(memo => {
@@ -122,7 +121,7 @@ class Memo {
       });
       await prompt.run()
         .then(title => {
-          let choice = prompt.choices.find(ch => ch.title === title);
+          const choice = prompt.choices.find(ch => ch.title === title);
           console.log(choice.content);
         });
     } else if(argv.d){
@@ -154,9 +153,9 @@ class Memo {
       reader.on('line', (input_lines) => {
         lines.push(input_lines);
       });
-      reader.on('close', async() => {//
+      reader.on('close', async() => {
         const title = lines[0];
-        const content = lines.join('');
+        const content = lines.join("\n");
         await this.createMemo(title, content);
       });
     }
@@ -164,4 +163,4 @@ class Memo {
 }
 
 const memo = new Memo();
-memo.activate(argv);
+memo.activate_memo_app(argv);
