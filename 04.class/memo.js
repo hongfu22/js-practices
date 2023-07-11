@@ -1,9 +1,10 @@
 const { argv } = require("yargs");
+const { Select } = require("enquirer");
 const { spawn } = require("child_process");
 const sqlite3 = require("sqlite3").verbose();
-const filename = "temporary.txt";
 const fs = require("fs");
-const { Select } = require("enquirer");
+
+const FILENAME = "temporary.txt";
 
 class Memo {
   constructor() {
@@ -32,12 +33,12 @@ class Memo {
         if (error) {
           reject(error);
         } else {
-          const fetched_memos = memos.map((memo) => ({
+          const fetchedMemos = memos.map((memo) => ({
             id: memo.id,
             title: memo.title,
             content: memo.content,
           }));
-          resolve(fetched_memos);
+          resolve(fetchedMemos);
         }
       });
     });
@@ -73,7 +74,7 @@ class Memo {
 
   outputMemo(content) {
     return new Promise((resolve, reject) => {
-      fs.writeFile(filename, content, (error) => {
+      fs.writeFile(FILENAME, content, (error) => {
         if (error) {
           reject(error);
         } else {
@@ -85,25 +86,25 @@ class Memo {
 
   editMemo() {
     return new Promise((resolve, reject) => {
-      const vim = spawn("vim", [filename], { stdio: "inherit" });
+      const vim = spawn("vim", [FILENAME], { stdio: "inherit" });
       vim.on("exit", (error) => {
         if (error) {
           reject(error);
         } else {
           const fs = require("fs");
-          const edited_file = fs.readFileSync(filename, "utf-8");
-          const file_rows = edited_file.split("\n").map((line) => line);
-          resolve(file_rows);
+          const editedFile = fs.readFileSync(FILENAME, "utf-8");
+          const fileRows = editedFile.split("\n").map((line) => line);
+          resolve(fileRows);
         }
       });
     });
   }
 
-  updateMemo(ex_title, title, content) {
+  updateMemo(exTitle, title, content) {
     return new Promise((resolve, reject) => {
       this.db.run(
         "UPDATE memos SET title = ?, content = ? WHERE title = ?",
-        [title, content, ex_title],
+        [title, content, exTitle],
         (error) => {
           if (error) {
             reject(error);
@@ -115,63 +116,65 @@ class Memo {
     });
   }
 
-  async activate_memo_app(argv) {
-    if (argv.l) {
+  chooseMemo(memos, messageType) {
+    const message = {
+      read: "Choose a note you want to see",
+      edit: "Choose a note you want to edit",
+      delete: "Choose a note you want to delete",
+    };
+    const prompt = new Select({
+      name: "memo",
+      message: message[messageType],
+      choices: memos,
+    });
+    return prompt.run().then((title) => {
+      const chosenMemo = memos.find((choice) => choice.title == title);
+      return chosenMemo;
+    });
+  }
+
+  async activateMemoApp(argv) {
+    try {
       const memos = await this.fetchMemos();
-      memos.forEach((memo) => {
-        console.log(memo.title);
-      });
-    } else if (argv.r) {
-      const prompt = new Select({
-        name: "memo",
-        message: "Choose a note you want to see",
-        choices: await this.fetchMemos(),
-      });
-      await prompt.run().then((title) => {
-        const choice = prompt.choices.find((ch) => ch.title === title);
-        console.log(choice.content);
-      });
-    } else if (argv.d) {
-      const prompt = new Select({
-        name: "memo",
-        message: "Choose a note you want to delete",
-        choices: await this.fetchMemos(),
-      });
-      const title = await prompt.run();
-      await this.deleteMemo(title);
-    } else if (argv.e) {
-      const memos = await this.fetchMemos();
-      const prompt = new Select({
-        name: "memo",
-        message: "Choose a note you want to edit",
-        choices: memos,
-      });
-      const title = await prompt.run();
-      const chosen_memo = memos.find((ch) => ch.title == title);
-      await this.outputMemo(chosen_memo.content);
-      const edited_content = await this.editMemo();
-      await this.updateMemo(
-        chosen_memo.title,
-        edited_content[0],
-        edited_content.join("\n")
-      );
-    } else {
-      let lines = [];
-      let reader = require("readline").createInterface({
-        input: process.stdin,
-        output: process.stdout,
-      });
-      reader.on("line", (input_lines) => {
-        lines.push(input_lines);
-      });
-      reader.on("close", async () => {
-        const title = lines[0];
-        const content = lines.join("\n");
-        await this.createMemo(title, content);
-      });
+      if (argv.l) {
+        memos.forEach((memo) => {
+          console.log(memo.title);
+        });
+      } else if (argv.r) {
+        const chosenMemo = await this.chooseMemo(memos, "read");
+        console.log(chosenMemo.content);
+      } else if (argv.d) {
+        const chosenMemo = await this.chooseMemo(memos, "delete");
+        await this.deleteMemo(chosenMemo.title);
+      } else if (argv.e) {
+        const chosenMemo = await this.chooseMemo(memos, "edit");
+        await this.outputMemo(chosenMemo.content);
+        const editedContent = await this.editMemo();
+        await this.updateMemo(
+          chosenMemo.title,
+          editedContent[0],
+          editedContent.join("\n")
+        );
+      } else {
+        let lines = [];
+        let reader = require("readline").createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        });
+        reader.on("line", (inputLines) => {
+          lines.push(inputLines);
+        });
+        reader.on("close", async () => {
+          const title = lines[0];
+          const content = lines.join("\n");
+          await this.createMemo(title, content);
+        });
+      }
+    } catch (error) {
+      console.error("エラーが発生しました。", error);
     }
   }
 }
 
 const memo = new Memo();
-memo.activate_memo_app(argv);
+memo.activateMemoApp(argv);
