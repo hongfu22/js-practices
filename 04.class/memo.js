@@ -13,18 +13,7 @@ class Memo {
   }
 
   createTable() {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        "CREATE TABLE IF NOT EXISTS memos (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT UNIQUE, content TEXT)"
-      ),
-        (error) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve();
-          }
-        };
-    });
+    this.db.run("CREATE TABLE IF NOT EXISTS memos (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT UNIQUE, content TEXT)")
   }
 
   fetchMemos() {
@@ -91,9 +80,9 @@ class Memo {
         if (error) {
           reject(error);
         } else {
-          const fs = require("fs");
           const editedFile = fs.readFileSync(FILENAME, "utf-8");
           const fileRows = editedFile.split("\n").map((line) => line);
+          fs.unlinkSync(FILENAME)
           resolve(fileRows);
         }
       });
