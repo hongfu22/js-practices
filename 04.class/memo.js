@@ -123,6 +123,9 @@ export default class Memo {
   }
 
   chooseMemo(memos, messageType) {
+    if (memos.length == 0) {
+      throw new Error("メモがありません。");
+    }
     const message = {
       read: "Choose a note you want to see",
       edit: "Choose a note you want to edit",
@@ -142,7 +145,6 @@ export default class Memo {
         choices: choices,
       },
     ]);
-
     return prompt.then((answers) => answers.selectedMemo);
   }
 }
