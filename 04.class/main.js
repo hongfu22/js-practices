@@ -1,12 +1,11 @@
-import Memo from "./memo.js"
+import Memo from "./memo.js";
 import yargs from "yargs";
-import { hideBin } from 'yargs/helpers'
-import rq from "readline"
-
+import { hideBin } from "yargs/helpers";
+import rq from "readline";
 
 const memo = new Memo();
 await Memo.createTable();
-const argv = yargs(hideBin(process.argv)).argv
+const argv = yargs(hideBin(process.argv)).argv;
 const memos = await memo.fetchMemos();
 if (argv.l) {
   memos.forEach((memo) => {
@@ -42,5 +41,3 @@ if (argv.l) {
     memo.createMemo(title, content);
   });
 }
-
-

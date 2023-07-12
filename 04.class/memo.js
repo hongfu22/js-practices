@@ -9,18 +9,19 @@ export default class Memo {
   static async createTable() {
     const db = new sqlite3.Database("memos.db");
     return new Promise((resolve, reject) => {
-      db.run("CREATE TABLE IF NOT EXISTS memos (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL UNIQUE, content TEXT)",
-      (error)=> {
-        if (error) {
-          console.log("エラーが発生しました。");
-          reject(error);
-        } else {
-          resolve()
+      db.run(
+        "CREATE TABLE IF NOT EXISTS memos (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL UNIQUE, content TEXT)",
+        (error) => {
+          if (error) {
+            console.log("エラーが発生しました。");
+            reject(error);
+          } else {
+            resolve();
+          }
         }
-      })
+      );
     });
-  };
-
+  }
 
   async fetchMemos() {
     const db = new sqlite3.Database("memos.db");
@@ -71,7 +72,7 @@ export default class Memo {
         }
       );
     });
-  };
+  }
 
   outputMemo(content) {
     return new Promise((resolve, reject) => {
@@ -96,7 +97,7 @@ export default class Memo {
         } else {
           const editedFile = fs.readFileSync(FILENAME, "utf-8");
           const fileRows = editedFile.split("\n").map((line) => line);
-          fs.unlinkSync(FILENAME)
+          fs.unlinkSync(FILENAME);
           resolve(fileRows);
         }
       });
@@ -127,12 +128,12 @@ export default class Memo {
       edit: "Choose a note you want to edit",
       delete: "Choose a note you want to delete",
     };
-  
+
     const choices = memos.map((memo) => ({
       name: memo.title,
       value: memo,
     }));
-  
+
     const prompt = inquirer.prompt([
       {
         type: "list",
@@ -141,7 +142,7 @@ export default class Memo {
         choices: choices,
       },
     ]);
-  
+
     return prompt.then((answers) => answers.selectedMemo);
   }
 }
