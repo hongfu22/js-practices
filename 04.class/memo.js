@@ -1,15 +1,14 @@
-import inquirer from "inquirer";
 import { spawn } from "child_process";
 import sqlite3 from "sqlite3";
 import fs from "fs";
 
 const FILENAME = "temporary.txt";
+const DB = new sqlite3.Database("memos.db");
 
 export default class Memo {
   static async createTable() {
-    const db = new sqlite3.Database("memos.db");
     return new Promise((resolve, reject) => {
-      db.run(
+      DB.run(
         "CREATE TABLE IF NOT EXISTS memos (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL UNIQUE, content TEXT)",
         (error) => {
           if (error) {
@@ -24,9 +23,8 @@ export default class Memo {
   }
 
   async fetchMemos() {
-    const db = new sqlite3.Database("memos.db");
     return new Promise((resolve, reject) => {
-      db.all("SELECT * FROM memos", (error, memos) => {
+      DB.all("SELECT * FROM memos", (error, memos) => {
         if (error) {
           console.log("エラーが発生しました。");
           reject(error);
@@ -43,9 +41,8 @@ export default class Memo {
   }
 
   async deleteMemo(title) {
-    const db = new sqlite3.Database("memos.db");
     return new Promise((resolve, reject) => {
-      db.run("DELETE FROM memos WHERE title = ?", [title], (error) => {
+      DB.run("DELETE FROM memos WHERE title = ?", [title], (error) => {
         if (error) {
           console.log("エラーが発生しました。");
           reject(error);
@@ -57,9 +54,8 @@ export default class Memo {
   }
 
   async createMemo(title, content) {
-    const db = new sqlite3.Database("memos.db");
     return new Promise((resolve, reject) => {
-      db.run(
+      DB.run(
         "INSERT INTO memos (title, content) VALUES (?, ?)",
         [title, content],
         (error) => {
@@ -105,9 +101,8 @@ export default class Memo {
   }
 
   async updateMemo(exTitle, title, content) {
-    const db = new sqlite3.Database("memos.db");
     return new Promise((resolve, reject) => {
-      db.run(
+      DB.run(
         "UPDATE memos SET title = ?, content = ? WHERE title = ?",
         [title, content, exTitle],
         (error) => {
@@ -120,31 +115,5 @@ export default class Memo {
         }
       );
     });
-  }
-
-  chooseMemo(memos, messageType) {
-    if (memos.length == 0) {
-      throw new Error("メモがありません。");
-    }
-    const message = {
-      read: "Choose a note you want to see",
-      edit: "Choose a note you want to edit",
-      delete: "Choose a note you want to delete",
-    };
-
-    const choices = memos.map((memo) => ({
-      name: memo.title,
-      value: memo,
-    }));
-
-    const prompt = inquirer.prompt([
-      {
-        type: "list",
-        name: "selectedMemo",
-        message: message[messageType],
-        choices: choices,
-      },
-    ]);
-    return prompt.then((answers) => answers.selectedMemo);
   }
 }
