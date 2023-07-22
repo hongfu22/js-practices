@@ -33,7 +33,7 @@ const chooseMemo = (memos, messageType) => {
     },
   ]);
   return prompt.then((answers) => answers.selectedMemo);
-}
+};
 
 try {
   if (argv.l) {

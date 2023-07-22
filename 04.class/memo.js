@@ -6,10 +6,10 @@ import tmp from "tmp";
 const DB = new sqlite3.Database("memos.db");
 
 export default class Memo {
-  #filename
+  #filename;
 
-  constructor(){
-    this.#filename ='';
+  constructor() {
+    this.#filename = "";
   }
 
   static async createTable() {
@@ -90,8 +90,8 @@ export default class Memo {
   }
 
   async outputMemo(content) {
-    console.log('---!-')
-    console.log(this.#filename)
+    console.log("---!-");
+    console.log(this.#filename);
     return new Promise((resolve, reject) => {
       fs.writeFile(this.#filename, content, (error) => {
         if (error) {
@@ -106,7 +106,9 @@ export default class Memo {
 
   async editMemo() {
     return new Promise((resolve, reject) => {
-      const vim = spawn(process.env.EDITOR, [this.#filename], { stdio: "inherit" });
+      const vim = spawn(process.env.EDITOR, [this.#filename], {
+        stdio: "inherit",
+      });
       vim.on("exit", (error) => {
         if (error) {
           console.log("エラーが発生しました。");
@@ -125,7 +127,6 @@ export default class Memo {
       });
     });
   }
-  
 
   async updateMemo(exTitle, title, content) {
     return new Promise((resolve, reject) => {
