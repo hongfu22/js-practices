@@ -1,11 +1,17 @@
 import { spawn } from "child_process";
 import sqlite3 from "sqlite3";
 import fs from "fs";
+import tmp from "tmp";
 
-const FILENAME = "temporary.txt";
 const DB = new sqlite3.Database("memos.db");
 
 export default class Memo {
+  #filename
+
+  constructor(){
+    this.#filename ='';
+  }
+
   static async createTable() {
     return new Promise((resolve, reject) => {
       DB.run(
@@ -19,6 +25,19 @@ export default class Memo {
           }
         }
       );
+    });
+  }
+
+  async createTempFile() {
+    return new Promise((resolve, reject) => {
+      tmp.file((err, path) => {
+        if (err) {
+          reject(err);
+        } else {
+          this.#filename = path;
+          resolve();
+        }
+      });
     });
   }
 
@@ -70,9 +89,11 @@ export default class Memo {
     });
   }
 
-  outputMemo(content) {
+  async outputMemo(content) {
+    console.log('---!-')
+    console.log(this.#filename)
     return new Promise((resolve, reject) => {
-      fs.writeFile(FILENAME, content, (error) => {
+      fs.writeFile(this.#filename, content, (error) => {
         if (error) {
           console.log("エラーが発生しました。");
           reject(error);
@@ -85,20 +106,26 @@ export default class Memo {
 
   async editMemo() {
     return new Promise((resolve, reject) => {
-      const vim = spawn("vim", [FILENAME], { stdio: "inherit" });
+      const vim = spawn(process.env.EDITOR, [this.#filename], { stdio: "inherit" });
       vim.on("exit", (error) => {
         if (error) {
           console.log("エラーが発生しました。");
           reject(error);
         } else {
-          const editedFile = fs.readFileSync(FILENAME, "utf-8");
-          const fileRows = editedFile.split("\n").map((line) => line);
-          fs.unlinkSync(FILENAME);
-          resolve(fileRows);
+          try {
+            const editedFile = fs.readFileSync(this.#filename, "utf-8");
+            const fileRows = editedFile.split("\n").map((line) => line);
+            fs.unlinkSync(this.#filename);
+            resolve(fileRows);
+          } catch (err) {
+            console.error("ファイル読み込みエラー:", err.message);
+            reject(err);
+          }
         }
       });
     });
   }
+  
 
   async updateMemo(exTitle, title, content) {
     return new Promise((resolve, reject) => {

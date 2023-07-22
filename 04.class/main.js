@@ -48,6 +48,7 @@ try {
     await memo.deleteMemo(chosenMemo.title);
   } else if (argv.e) {
     const chosenMemo = await chooseMemo(memos, "edit");
+    await memo.createTempFile();
     await memo.outputMemo(chosenMemo.content);
     const editedContent = await memo.editMemo();
     await memo.updateMemo(
