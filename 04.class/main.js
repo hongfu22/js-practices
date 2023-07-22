@@ -24,15 +24,19 @@ const chooseMemo = (memos, messageType) => {
     value: memo,
   }));
 
-  const prompt = inquirer.prompt([
-    {
-      type: "list",
-      name: "selectedMemo",
-      message: message[messageType],
-      choices: choices,
-    },
-  ]);
-  return prompt.then((answers) => answers.selectedMemo);
+  try {
+    const prompt = inquirer.prompt([
+      {
+        type: "list",
+        name: "selectedMemo",
+        message: message[messageType],
+        choices: choices,
+      },
+    ]);
+    return prompt.then((answers) => answers.selectedMemo);
+  } catch (error) {
+    console.log("エラーが発生しました:", error.message);
+  }
 };
 
 try {
