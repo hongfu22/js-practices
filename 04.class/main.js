@@ -66,9 +66,17 @@ try {
       lines.push(inputLines);
     });
     reader.on("close", () => {
-      const title = lines[0];
-      const content = lines.join("\n");
-      memo.createMemo(title, content);
+      if (lines.length > 0) {
+        const title = lines[0].trim();
+        const content = lines.join("\n");
+        if (title !== "") {
+          memo.createMemo(title, content);
+        } else {
+          console.log("入力がありません。");
+        }
+      } else {
+        console.log("入力がありません。");
+      }
     });
   }
 } catch (error) {
