@@ -1,6 +1,7 @@
 import { spawn } from "child_process";
 import sqlite3 from "sqlite3";
 import fs from "fs";
+import tmp from "tmp";
 
 const DB = new sqlite3.Database("memos.db");
 
@@ -77,6 +78,27 @@ export default class Memo {
           reject(error);
         } else {
           resolve();
+        }
+      });
+    });
+  }
+
+  async createTemplateFile(){
+    return new Promise((resolve, reject) => {
+      tmp.file(function _tempFileCreated(error, path, cleanupCallback) {
+        if (error) {
+          reject(error);
+        } else {
+          resolve({
+            path: path,
+            cleanup: () => {
+              try{
+                cleanupCallback();
+              } catch(error) {
+                reject(error);
+              }
+            }
+          })
         }
       });
     });
