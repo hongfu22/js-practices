@@ -84,6 +84,7 @@ export default class Memo {
   }
 
   async createTemplateFile(){
+    tmp.setGracefulCleanup();
     return new Promise((resolve, reject) => {
       tmp.file(function _tempFileCreated(error, path, cleanupCallback) {
         if (error) {
@@ -117,7 +118,6 @@ export default class Memo {
           try {
             const editedFile = fs.readFileSync(path, "utf-8");
             const fileRows = editedFile.split("\n").map((line) => line);
-            fs.unlinkSync(path);
             resolve(fileRows);
           } catch (err) {
             console.error("ファイル読み込みエラー:", err.message);
