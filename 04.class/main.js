@@ -3,6 +3,7 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import readline from "readline";
 import inquirer from "inquirer";
+import tmp from "tmp";
 
 const memo = new Memo();
 await Memo.createTable();
@@ -51,15 +52,17 @@ try {
     const chosenMemo = await chooseMemo(memos, "delete");
     await memo.deleteMemo(chosenMemo.title);
   } else if (argv.e) {
+    const tmpobj = tmp.fileSync();
+    const file_path = tmpobj.name;
     const chosenMemo = await chooseMemo(memos, "edit");
-    await memo.createTempFile();
-    await memo.outputMemo(chosenMemo.content);
-    const editedContent = await memo.editMemo();
-    await memo.updateMemo(
+    memo.outputMemo(chosenMemo.content, file_path);
+    const editedContent = await memo.editMemo(file_path);
+    memo.updateMemo(
       chosenMemo.title,
       editedContent[0],
       editedContent.join("\n")
     );
+    tmpobj.removeCallback();
   } else {
     let lines = [];
     let reader = readline.createInterface({

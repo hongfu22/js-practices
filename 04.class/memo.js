@@ -1,17 +1,10 @@
 import { spawn } from "child_process";
 import sqlite3 from "sqlite3";
 import fs from "fs";
-import tmp from "tmp";
 
 const DB = new sqlite3.Database("memos.db");
 
 export default class Memo {
-  #filename;
-
-  constructor() {
-    this.#filename = "";
-  }
-
   static async createTable() {
     return new Promise((resolve, reject) => {
       DB.run(
@@ -25,19 +18,6 @@ export default class Memo {
           }
         }
       );
-    });
-  }
-
-  async createTempFile() {
-    return new Promise((resolve, reject) => {
-      tmp.file((err, path) => {
-        if (err) {
-          reject(err);
-        } else {
-          this.#filename = path;
-          resolve();
-        }
-      });
     });
   }
 
@@ -89,11 +69,9 @@ export default class Memo {
     });
   }
 
-  async outputMemo(content) {
-    console.log("---!-");
-    console.log(this.#filename);
+  async outputMemo(content, path) {
     return new Promise((resolve, reject) => {
-      fs.writeFile(this.#filename, content, (error) => {
+      fs.writeFile(path, content, (error) => {
         if (error) {
           console.log("エラーが発生しました。");
           reject(error);
@@ -104,9 +82,9 @@ export default class Memo {
     });
   }
 
-  async editMemo() {
+  async editMemo(path) {
     return new Promise((resolve, reject) => {
-      const vim = spawn(process.env.EDITOR, [this.#filename], {
+      const vim = spawn(process.env.EDITOR, [path], {
         stdio: "inherit",
       });
       vim.on("exit", (error) => {
@@ -115,9 +93,9 @@ export default class Memo {
           reject(error);
         } else {
           try {
-            const editedFile = fs.readFileSync(this.#filename, "utf-8");
+            const editedFile = fs.readFileSync(path, "utf-8");
             const fileRows = editedFile.split("\n").map((line) => line);
-            fs.unlinkSync(this.#filename);
+            fs.unlinkSync(path);
             resolve(fileRows);
           } catch (err) {
             console.error("ファイル読み込みエラー:", err.message);
